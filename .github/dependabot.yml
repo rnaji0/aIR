@@ -16,8 +16,8 @@ updates:
       cargo:
         update-types: [minor, patch]
 
-  - package-ecosystem: pip
-    directory: /
+  - package-ecosystem: uv
+    directory: /python
     schedule:
       interval: weekly
     groups:
