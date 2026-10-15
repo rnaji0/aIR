@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rnaji0/aIR/schema/action.schema.json",
+  "title": "Action",
+  "description": "One traced command. IR v0, draft. Written by the Rust runtime as JSONL, read by Python tooling.",
+  "type": "object",
+  "required": ["cmd", "cwd", "start_ms", "wall_ms", "exit", "reads", "writes", "procs"],
+  "properties": {
+    "cmd": { "type": "string" },
+    "cwd": { "type": "string" },
+    "start_ms": { "type": "integer", "description": "Unix epoch milliseconds" },
+    "wall_ms": { "type": "integer" },
+    "think_ms": { "type": "integer", "description": "Gap since the previous action returned" },
+    "exit": { "type": "integer" },
+    "stdout_hash": { "type": "string" },
+    "reads": { "type": "array", "items": { "$ref": "#/$defs/file" } },
+    "writes": { "type": "array", "items": { "$ref": "#/$defs/file" } },
+    "missing": { "type": "array", "items": { "type": "string" }, "description": "Paths probed but not found" },
+    "procs": { "type": "array", "items": { "type": "string" }, "description": "argv[0] of each spawned process" },
+    "memo_key": { "type": "string" }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string" },
+        "hash": { "type": "string" }
+      }
+    }
+  }
+}
