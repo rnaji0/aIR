@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+tone_instructions: >-
+  Direct and concise. State the problem, why it matters, and the fix in as few
+  words as possible. No praise, hedging, filler, or emoji. Cover every real
+  issue; skip style nits unless they hide a bug.
+reviews:
+  profile: assertive
+  high_level_summary: true
+  high_level_summary_instructions: >-
+    Write for a reviewer who hasn't seen the code. Open with one sentence: what
+    the PR does and why. Then one bullet per change, covering every change
+    including config, CI, dependencies, and deleted code, with the file or
+    module in backticks. One line per bullet. Add a "Risks" line only if
+    something can break (compatibility, performance, security, migration).
+    No praise, no restating the title, no filler, no emoji. Omit empty sections.
+  poem: false
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
