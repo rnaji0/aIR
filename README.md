@@ -7,7 +7,7 @@ Most agent optimization targets the model while aIR aims to target the program o
 
 This project will be tested on firecracker and will use both general agent frameworks and RL-focused frameworks.
 
-> Early and in active development.
+> This project is in very early development. I'm going to spend a good bit of time reading/studying the current papers to create a more directed plan. Feel free to read them yourself (they're pretty interesting) and contribute! (https://arxiv.org/pdf/2608.15127)
 
 This is inspired by Azul's Falcon JIT compiler and ReadyNow. The goal of this project is to do for an agent's interaction with the machine what they did for Java execution.
 
