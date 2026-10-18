@@ -1,1 +1,1 @@
-"""Tooling for aIR. Reads traces written by the Rust runtime; never on the per-action path."""
+"""Tooling for aIR. Reads traces written by the C++ runtime; never on the per-action path."""

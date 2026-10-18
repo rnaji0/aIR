@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/rnaji0/aIR/schema/action.schema.json",
   "title": "Action",
-  "description": "One traced command. IR v0, draft. Written by the Rust runtime as JSONL, read by Python tooling.",
+  "description": "One traced command. IR v0, draft. Written by the C++ runtime as JSONL, read by Python tooling.",
   "type": "object",
   "required": ["cmd", "cwd", "start_ms", "wall_ms", "exit", "reads", "writes", "procs"],
   "properties": {

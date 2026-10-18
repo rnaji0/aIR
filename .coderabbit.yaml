@@ -15,6 +15,17 @@ reviews:
     something can break (compatibility, performance, security, migration).
     No praise, no restating the title, no filler, no emoji. Omit empty sections.
   poem: false
+  path_instructions:
+    - path: "src/**"
+      instructions: >-
+        Modern C++23 runtime on the per-action hot path. Flag undefined behavior,
+        lifetime and ownership bugs (dangling string_view/span, use after move),
+        unnecessary copies, missing RAII around file descriptors and processes,
+        unchecked syscall return values, and errno misuse.
+    - path: "tests/**"
+      instructions: >-
+        GoogleTest. Flag tests that can't fail, missing edge cases, and
+        dependence on the host environment.
   collapse_walkthrough: true
   auto_review:
     enabled: true

@@ -1,4 +1,6 @@
 version: 2
+# C++ dependencies are pinned in cmake/Dependencies.cmake. Dependabot can't read
+# FetchContent, so those are bumped by hand.
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -7,14 +9,6 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-
-  - package-ecosystem: cargo
-    directory: /
-    schedule:
-      interval: weekly
-    groups:
-      cargo:
-        update-types: [minor, patch]
 
   - package-ecosystem: uv
     directory: /python

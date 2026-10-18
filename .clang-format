@@ -1,0 +1,13 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Inline
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<[a-z_]+>$'        # standard library
+    Priority: 1
+  - Regex: '^<.*>$'             # third-party
+    Priority: 2
+  - Regex: '.*'                 # aIR
+    Priority: 3

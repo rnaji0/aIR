@@ -1,0 +1,69 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "asan",
+      "displayName": "Debug + ASan/UBSan",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "AIR_SANITIZE": "ON" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI: debug, warnings as errors",
+      "inherits": "debug",
+      "cacheVariables": { "AIR_WERROR": "ON" }
+    },
+    {
+      "name": "ci-asan",
+      "displayName": "CI: sanitizers, warnings as errors",
+      "inherits": "asan",
+      "cacheVariables": { "AIR_WERROR": "ON" }
+    },
+    {
+      "name": "lint",
+      "displayName": "CI: clang-tidy",
+      "inherits": "ci",
+      "cacheVariables": { "AIR_CLANG_TIDY": "ON", "BUILD_TESTING": "OFF" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "ci", "configurePreset": "ci" },
+    { "name": "ci-asan", "configurePreset": "ci-asan" },
+    { "name": "lint", "configurePreset": "lint" }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error" }
+    },
+    { "name": "debug", "inherits": "base", "configurePreset": "debug" },
+    { "name": "asan", "inherits": "base", "configurePreset": "asan" },
+    { "name": "release", "inherits": "base", "configurePreset": "release" },
+    { "name": "ci", "inherits": "base", "configurePreset": "ci" },
+    { "name": "ci-asan", "inherits": "base", "configurePreset": "ci-asan" }
+  ]
+}
