@@ -1,0 +1,7 @@
+# Zed's built-in C++ support (clangd) reads this. Run `cmake --preset debug` once
+# so build/debug/compile_commands.json exists.
+CompileFlags:
+  CompilationDatabase: build/debug
+Diagnostics:
+  ClangTidy:
+    FastCheckFilter: Loose

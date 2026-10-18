@@ -9,18 +9,44 @@ permissions:
   contents: read
 
 jobs:
-  rust:
-    runs-on: ubuntu-latest
+  cpp:
+    name: cpp (${{ matrix.cc }}, ${{ matrix.preset }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cc: gcc-14, cxx: g++-14, preset: ci }
+          - { cc: clang-18, cxx: clang++-18, preset: ci }
+          - { cc: clang-18, cxx: clang++-18, preset: ci-asan }
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build ${{ matrix.cxx }}
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }}
+      - run: ctest --preset ${{ matrix.preset }}
+
+  lint:
+    runs-on: ubuntu-24.04
+    env:
+      CC: clang-18
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          components: rustfmt, clippy
-      - run: cargo fmt --all --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build clang-18 clang-format-18 clang-tidy-18
+      - name: clang-format
+        run: git ls-files '*.cpp' '*.hpp' | xargs --no-run-if-empty clang-format-18 --dry-run --Werror
+      - name: clang-tidy
+        run: |
+          cmake --preset lint -DAIR_CLANG_TIDY_EXE=clang-tidy-18
+          cmake --build --preset lint
 
   python:
     runs-on: ubuntu-latest

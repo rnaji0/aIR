@@ -1,5 +1,7 @@
 secrets/
-target/
+build/
+.cache/
+compile_commands.json
 traces/
 .venv/
 __pycache__/

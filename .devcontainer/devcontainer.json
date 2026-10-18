@@ -1,11 +1,12 @@
 {
   "name": "aIR",
-  "image": "mcr.microsoft.com/devcontainers/rust:1",
+  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-24.04",
   "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y strace && curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y ninja-build g++-14 clang-18 clang-format-18 clang-tidy-18 clangd-18 gdb strace && curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "containerEnv": { "CC": "clang-18", "CXX": "clang++-18" },
   "customizations": {
     "vscode": {
-      "extensions": ["rust-lang.rust-analyzer", "charliermarsh.ruff", "ms-python.python"]
+      "extensions": ["llvm-vs-code-extensions.vscode-clangd", "ms-vscode.cmake-tools", "charliermarsh.ruff", "ms-python.python"]
     }
   }
 }
