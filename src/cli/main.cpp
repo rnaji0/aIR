@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
     if (std::string_view(arguments[1]) == "exec") {
         auto it = std::ranges::find_if(arguments.subspan(2), [](std::string_view c) {return c == "--";});
-        if (it == arguments.end()) {
+        if (it == arguments.subspan(2).end()) {
             std::println(stderr, "usage: air exec -- <command> [args...]");
             return 1;
         }
