@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <print>
 #include <span>
+#include <string>
 #include <string_view>
 
 bool validate_input(std::span<char*> args) {
@@ -14,6 +15,15 @@ bool validate_input(std::span<char*> args) {
     return true;
 }
 
+void print_input(std::span<char*> args) {
+
+    std::print("{}", args[0]);
+    for (char* elem : args.subspan(1)) {
+        std::print(" {}", elem);
+    }
+    std::println("{}", "");
+}
+
 int main(int argc, char* argv[]) {
     auto arguments = std::span(argv, static_cast<std::size_t>(argc));
 
@@ -22,8 +32,9 @@ int main(int argc, char* argv[]) {
     }
 
     if (std::string_view(arguments[1]) == "exec") {
-        auto it = std::ranges::find_if(arguments.subspan(2), [](std::string_view c) {return c == "--";});
-        if (it == arguments.subspan(2).end()) {
+        auto rest = arguments.subspan(2);
+        auto it = std::ranges::find_if(rest, [](std::string_view c) {return c == "--";});
+        if (it == rest.end()) {
             std::println(stderr, "usage: air exec -- <command> [args...]");
             return 1;
         }
@@ -32,7 +43,7 @@ int main(int argc, char* argv[]) {
             std::println(stderr, "usage: air exec -- <command> [args...]");
             return 1;
         }
-        std::println("{}", cmds_to_process);
+        print_input(cmds_to_process);
     } else {
         std::println(stderr, "air: unknown command '{}'", std::string_view(arguments[1]));
         return 1;
