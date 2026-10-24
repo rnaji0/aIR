@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     auto arguments = std::span(argv, static_cast<std::size_t>(argc));
     if (arguments.size() < 3) {
         std::println(stderr, "air: (error) invalid input, specify a mode and command '{}'",
-        str_input(arguments.subspan(1)));
+                     str_input(arguments.subspan(1)));
         return 1;
     }
     if (std::string_view(arguments[1]) == "exec") {
