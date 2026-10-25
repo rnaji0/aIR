@@ -12,6 +12,7 @@ struct ProcessResult {
     bool signaled = false; //true if killed by a signal instead of exiting
     int code = 0;//(0-255)
     std::string stdout_data;
+    int exec_errno = 0; // why exec failed
 };
 
 // Runs `argv` and waits for it to finish. error case means air failed not cmd

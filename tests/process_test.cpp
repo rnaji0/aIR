@@ -1,3 +1,7 @@
+#include <cerrno>
+#include <format>
+#include <string>
+
 #include <gtest/gtest.h>
 #include <unistd.h>
 
@@ -25,6 +29,7 @@ TEST(RunProcess, CapturesStdout) {
     EXPECT_FALSE(result->signaled);
     EXPECT_EQ(result->code, 0);
     EXPECT_EQ(result->stdout_data, "hi\n");
+    EXPECT_EQ(result->exec_errno, 0); // exec ran
 }
 
 TEST(RunProcess, CapturesOutputWithoutTrailingNewline) {
@@ -56,6 +61,7 @@ TEST(RunProcess, CommandNotFoundExits127) {
     ASSERT_TRUE(result.has_value());
     EXPECT_FALSE(result->signaled);
     EXPECT_EQ(result->code, 127);
+    EXPECT_EQ(result->exec_errno, ENOENT);
 }
 
 TEST(RunProcess, NotExecutableExits126) {
@@ -63,6 +69,15 @@ TEST(RunProcess, NotExecutableExits126) {
     auto result = run_process(args.span());
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result->code, 126);
+    EXPECT_EQ(result->exec_errno, EACCES);
+}
+
+TEST(RunProcess, CommandExitingWithErrorIsNotExecFailure) {
+    Args args{"sh", "-c", "exit 127"}; // same code as not-found, but exec ran
+    auto result = run_process(args.span());
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->code, 127);
+    EXPECT_EQ(result->exec_errno, 0);
 }
 
 TEST(RunProcess, DoesNotCaptureStderr) {
@@ -85,6 +100,17 @@ TEST(RunProcess, EmptyCommandIsAnError) {
     Args args{};
     auto result = run_process(args.span());
     EXPECT_FALSE(result.has_value());
+}
+
+TEST(RunProcess, PipeFdsDoNotLeakIntoCommand) {
+    // pipe gets the 2 lowest free fds. command reports which of 1, n, n+1 it has open
+    int n = lowest_free_fd();
+    std::string script =
+        std::format("for fd in 1 {} {}; do [ -e /dev/fd/$fd ] && echo $fd; done; true", n, n + 1);
+    Args args{"sh", "-c", script};
+    auto result = run_process(args.span());
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->stdout_data, "1\n"); // fd 1 (control) open, pipe fds closed
 }
 
 TEST(RunProcess, DoesNotLeakFds) {

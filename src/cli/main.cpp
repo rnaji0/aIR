@@ -4,6 +4,7 @@
 #include <print>
 #include <span>
 #include <string_view>
+#include <system_error>
 
 #include "backend/process.hpp"
 #include "cli/args.hpp"
@@ -29,6 +30,10 @@ int main(int argc, char* argv[]) {
         if (!result) {
             std::println(stderr, "air: (error) {}", result.error());
             return 1;
+        }
+        if (result->exec_errno != 0) {
+            std::println(stderr, "air: cannot run '{}': {}", (*parsed_args)[0],
+                         std::generic_category().message(result->exec_errno));
         }
 
         std::println(stderr, "air: captured {} bytes of stdout:", result->stdout_data.size());
