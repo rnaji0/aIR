@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(air VERSION 0.0.0 LANGUAGES C CXX) # x-release-please-version
+project(air VERSION 1.0.0 LANGUAGES C CXX) # x-release-please-version
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
