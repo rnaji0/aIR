@@ -1,7 +1,7 @@
 #include "backend/process.hpp"
 
 #include <cerrno>
-#include <print>
+#include <cstring>
 #include <system_error>
 #include <vector>
 
@@ -9,6 +9,14 @@
 #include <unistd.h>
 
 namespace air::backend {
+
+namespace {
+// asnyc safe for err handling
+void write_stderr(const char* text) {
+    [[maybe_unused]] auto written = write(STDERR_FILENO, text, std::strlen(text));
+}
+
+} // namespace
 
 std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
     if (argv.empty()) {
@@ -31,9 +39,11 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
 
         //exec failed
         int err = errno;
-        std::println(stderr, "air: cannot run '{}': {}", argv[0],
-                     std::generic_category().message(err));
-        _exit(127);
+        bool not_found = (err == ENOENT);
+        write_stderr("air: cannot run '");
+        write_stderr(exec_argv[0]);
+        write_stderr(not_found ? "': command not found\n" : "': cannot execute\n");
+        _exit(not_found ? 127 : 126);
     }
     // parent blocks until child ends, collects how it ended
     int status = 0;
