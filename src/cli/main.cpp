@@ -8,6 +8,8 @@
 #include <string>
 #include <string_view>
 
+#include "backend/process.hpp"
+
 std::string str_input(std::span<char*> args) {
     std::string inp;
     if (args.empty()) { // just air
@@ -47,7 +49,12 @@ int main(int argc, char* argv[]) {
             std::println(stderr, "air: (error) {}", parsed_args.error());
             return 1;
         }
-        std::println("{}", str_input(*parsed_args));
+        //std::println("{}", str_input(*parsed_args)); use for debug TODO: add debug mode
+        auto result = air::backend::run_process(*parsed_args);
+        if (!result) {
+            std::println(stderr, "air: (error) {}", result.error());
+            return 1;
+        }
     } else {
         std::println(stderr, "air: (error) unknown command '{}'", std::string_view(arguments[1]));
         return 1;
