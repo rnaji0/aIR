@@ -56,6 +56,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
+        std::println(stderr, "air: captured {} bytes of stdout:", result->stdout_data.size());
+        std::print("{}", result->stdout_data);
         if (result->signaled) {
             std::println(stderr, "air: killed by signal {}", result->code);
         } else {

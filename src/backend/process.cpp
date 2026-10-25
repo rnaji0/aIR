@@ -1,8 +1,10 @@
 #include "backend/process.hpp"
 
+#include <array>
 #include <cerrno>
 #include <cstring>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 #include <sys/wait.h>
@@ -27,13 +29,29 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
     std::vector<char*> exec_argv(argv.begin(), argv.end());
     exec_argv.push_back(nullptr);
 
+    std::array<int, 2> out_pipe{};
+    if (pipe(out_pipe.data()) == -1) {
+        return std::unexpected("pipe failed: " + std::generic_category().message(errno));
+    }
+
     pid_t pid = fork();
-    if (pid == -1) { //failed to create child
-        return std::unexpected("fork failed: " + std::generic_category().message(errno));
+    if (pid == -1) { // failed to create child
+        int err = errno;
+        close(out_pipe[0]); // leaky
+        close(out_pipe[1]);
+        return std::unexpected("fork failed: " + std::generic_category().message(err));
     }
 
     if (pid == 0) {
         //child of air made
+
+        if (dup2(out_pipe[1], STDOUT_FILENO) == -1) {
+            write_stderr("air: cannot redirect stdout\n");
+            _exit(126);
+        }
+        close(out_pipe[0]);
+        close(out_pipe[1]);
+
         //(program ie 'echo', arg array)
         execvp(exec_argv[0], exec_argv.data());
 
@@ -41,10 +59,25 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
         int err = errno;
         bool not_found = (err == ENOENT);
         write_stderr("air: cannot run '");
-        write_stderr(exec_argv[0]);
+        write_stderr(exec_argv[0]); //TODO: find way to not lose exact reason (propogate up)
         write_stderr(not_found ? "': command not found\n" : "': cannot execute\n");
         _exit(not_found ? 127 : 126);
     }
+    close(out_pipe[1]);
+
+    // read all
+    std::string captured;
+    std::array<char, 4096> buf{};
+    while (true) {
+        ssize_t n = read(out_pipe[0], buf.data(), buf.size());
+        if (n > 0) {
+            captured.append(buf.data(), static_cast<std::size_t>(n));
+        } else if (n == 0 || errno != EINTR) { // eof or err
+            break;
+        }
+    }
+    close(out_pipe[0]);
+
     // parent blocks until child ends, collects how it ended
     int status = 0;
     while (waitpid(pid, &status, 0) == -1) {
@@ -56,10 +89,12 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
     }
 
     if (WIFEXITED(status)) {
-        return ProcessResult{.signaled = false, .code = WEXITSTATUS(status)};
+        return ProcessResult{
+            .signaled = false, .code = WEXITSTATUS(status), .stdout_data = std::move(captured)};
     }
     if (WIFSIGNALED(status)) {
-        return ProcessResult{.signaled = true, .code = WTERMSIG(status)};
+        return ProcessResult{
+            .signaled = true, .code = WTERMSIG(status), .stdout_data = std::move(captured)};
     }
     return std::unexpected("child ended in an unknown state");
 }
