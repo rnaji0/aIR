@@ -55,6 +55,12 @@ int main(int argc, char* argv[]) {
             std::println(stderr, "air: (error) {}", result.error());
             return 1;
         }
+
+        if (result->signaled) {
+            std::println(stderr, "air: killed by signal {}", result->code);
+        } else {
+            std::println(stderr, "air: exited with code {}", result->code);
+        }
     } else {
         std::println(stderr, "air: (error) unknown command '{}'", std::string_view(arguments[1]));
         return 1;

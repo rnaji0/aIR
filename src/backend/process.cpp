@@ -10,7 +10,9 @@
 namespace air::backend {
 
 std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
-    (void)argv;
+    if (argv.empty()) {
+        return std::unexpected("empty command");
+    }
 
     pid_t pid = fork();
     if (pid == -1) { //failed to create child
@@ -19,14 +21,32 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
 
     if (pid == 0) {
         //child of air made
-        // TODO: now pass in cmd/argv to child proc
-        std::println(stderr, "child: pid {}, my parent {}", getpid(), getppid());
-        _exit(0);
+        //(program ie 'echo', arg array)
+        execvp(argv[0], argv.data());
+
+        //exec failed
+        int err = errno;
+        std::println(stderr, "air: cannot run '{}': {}", argv[0],
+                     std::generic_category().message(err));
+        _exit(127);
     }
-    // parent since fork return pid of child
-    std::println(stderr, "parent: pid {}, my child {}", getpid(), pid);
-    waitpid(pid, nullptr, 0); //TODO: wait parent until child is terminal
-    return std::unexpected("process placeholder");
+    // parent blocks until child ends, collects how it ended
+    int status = 0;
+    while (waitpid(pid, &status, 0) == -1) {
+        int err = errno;
+        if (err != EINTR) { // child not running
+            return std::unexpected("waitpid failed: " + std::generic_category().message(err));
+        }
+        // child running
+    }
+
+    if (WIFEXITED(status)) {
+        return ProcessResult{.signaled = false, .code = WEXITSTATUS(status)};
+    }
+    if (WIFSIGNALED(status)) {
+        return ProcessResult{.signaled = true, .code = WTERMSIG(status)};
+    }
+    return std::unexpected("child ended in an unknown state");
 }
 
 } // namespace air::backend
