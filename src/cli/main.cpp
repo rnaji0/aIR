@@ -2,50 +2,67 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdio>
+#include <expected>
 #include <print>
 #include <span>
 #include <string>
 #include <string_view>
 
-bool validate_input(std::span<char*> args) {
-    if (args.size() < 3) {
-        std::println(stderr, "usage: air <mode> -- <command> [args...]");
-        return false;
+#include "backend/process.hpp"
+
+std::string str_input(std::span<char*> args) {
+    std::string inp;
+    if (args.empty()) { // just air
+        return inp;
     }
-    return true;
+    inp += args[0];
+    for (char* elem : args.subspan(1)) {
+        inp += " ";
+        inp += elem;
+    }
+    return inp;
 }
 
-void print_input(std::span<char*> args) {
-
-    std::print("{}", args[0]);
-    for (char* elem : args.subspan(1)) {
-        std::print(" {}", elem);
+std::expected<std::span<char*>, std::string> parse_cmd(std::span<char*> args) {
+    auto rest = args.subspan(2);
+    auto it = std::ranges::find_if(rest, [](std::string_view c) { return c == "--"; });
+    if (it == rest.end()) {
+        return std::unexpected("missing '--' before the command");
     }
-    std::println("{}", "");
+    std::span cmds_to_process(it + 1, rest.end());
+    if (cmds_to_process.empty()) {
+        return std::unexpected("no command after '--'");
+    }
+    return cmds_to_process;
 }
 
 int main(int argc, char* argv[]) {
     auto arguments = std::span(argv, static_cast<std::size_t>(argc));
-
-    if (!validate_input(arguments)) {
+    if (arguments.size() < 3) {
+        std::println(stderr, "air: (error) invalid input, specify a mode and command '{}'",
+                     str_input(arguments.subspan(1)));
         return 1;
     }
-
     if (std::string_view(arguments[1]) == "exec") {
-        auto rest = arguments.subspan(2);
-        auto it = std::ranges::find_if(rest, [](std::string_view c) { return c == "--"; });
-        if (it == rest.end()) {
-            std::println(stderr, "usage: air exec -- <command> [args...]");
+        auto parsed_args = parse_cmd(arguments);
+        if (!parsed_args) {
+            std::println(stderr, "air: (error) {}", parsed_args.error());
             return 1;
         }
-        std::span cmds_to_process(it + 1, arguments.end());
-        if (cmds_to_process.empty()) {
-            std::println(stderr, "usage: air exec -- <command> [args...]");
+        //std::println("{}", str_input(*parsed_args)); use for debug TODO: add debug mode
+        auto result = air::backend::run_process(*parsed_args);
+        if (!result) {
+            std::println(stderr, "air: (error) {}", result.error());
             return 1;
         }
-        print_input(cmds_to_process);
+
+        if (result->signaled) {
+            std::println(stderr, "air: killed by signal {}", result->code);
+        } else {
+            std::println(stderr, "air: exited with code {}", result->code);
+        }
     } else {
-        std::println(stderr, "air: unknown command '{}'", std::string_view(arguments[1]));
+        std::println(stderr, "air: (error) unknown command '{}'", std::string_view(arguments[1]));
         return 1;
     }
     return 0;

@@ -2,6 +2,8 @@
 
 namespace air::core {
 
-std::string_view version() noexcept { return AIR_VERSION; }
+std::string_view version() noexcept {
+    return AIR_VERSION;
+}
 
 } // namespace air::core
