@@ -47,10 +47,10 @@ std::expected<std::pair<Fd, Fd>, std::string> make_pipe() {
 }
 
 // blocks until child execs or execs fails
-int read_exec_errno(const Fd& err_read) {
+int read_exec_errno(const Fd& exec_read) {
     int exec_errno = 0;
     while (true) {
-        ssize_t got = read(err_read.get(), &exec_errno, sizeof(exec_errno));
+        ssize_t got = read(exec_read.get(), &exec_errno, sizeof(exec_errno));
         if (got == -1 && errno == EINTR) {
             continue; // interrupted, retry
         }
@@ -92,12 +92,18 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
     }
     auto [out_read, out_write] = std::move(*out_pipe);
 
-    // child -> parent: exec errno on failure, EOF on success (close-on-exec)
-    auto err_pipe = make_pipe();
+    auto err_pipe = make_pipe(); // child's stderr
     if (!err_pipe) {
         return std::unexpected(err_pipe.error());
     }
     auto [err_read, err_write] = std::move(*err_pipe);
+
+    // child -> parent: exec errno on failure, EOF on success (close-on-exec)
+    auto exec_pipe = make_pipe();
+    if (!exec_pipe) {
+        return std::unexpected(exec_pipe.error());
+    }
+    auto [exec_read, exec_write] = std::move(*exec_pipe);
 
     pid_t pid = fork();
     if (pid == -1) { // failed to create child
@@ -110,20 +116,25 @@ std::expected<ProcessResult, std::string> run_process(std::span<char*> argv) {
             write_stderr("air: cannot redirect stdout\n");
             _exit(126);
         }
+        if (dup2(err_write.get(), STDERR_FILENO) == -1) { // after this, fd 2 is the pipe
+            write_stderr("air: cannot redirect stderr\n");
+            _exit(126);
+        }
 
         //(program ie 'echo', arg array)
         execvp(exec_argv[0], exec_argv.data());
         //exec failed
         int err = errno;
         //send actual rzn to parent
-        [[maybe_unused]] auto sent = write(err_write.get(), &err, sizeof(err));
+        [[maybe_unused]] auto sent = write(exec_write.get(), &err, sizeof(err));
         _exit(err == ENOENT ? 127 : 126);
     }
     out_write.reset();
-    err_write.reset(); // else our own copy blocks EOF on success
+    err_write.reset();
+    exec_write.reset(); // else our own copy blocks EOF on success
 
-    int exec_errno = read_exec_errno(err_read);
-    err_read.reset();
+    int exec_errno = read_exec_errno(exec_read);
+    exec_read.reset();
 
     std::string captured = read_all(out_read);
     out_read.reset(); // done reading; would also close on return
